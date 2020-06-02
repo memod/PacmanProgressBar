@@ -1,0 +1,32 @@
+<idea-plugin>
+    <id>com.carlosdurazo.pacman</id>
+    <name>Pacman Progress Bar</name>
+    <version>1.0</version>
+    <idea-version since-build="193"/>
+    <vendor email="guillermo.durazo@gmail.com">Carlos Durazo</vendor>
+
+    <description><![CDATA[
+      Progress bar with a hungry Pacman feeding off your builds.
+    ]]></description>
+
+    <change-notes><![CDATA[
+      <em>1.0 First release! Currently only have baseline for the progress bar.</em><br>
+    ]]>
+    </change-notes>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+    </extensions>
+
+    <actions>
+    </actions>
+
+    <application-components>
+        <component>
+            <implementation-class>com.carlosdurazo.pacman.PacmanProgressBarComponent</implementation-class>
+        </component>
+    </application-components>
+</idea-plugin>
