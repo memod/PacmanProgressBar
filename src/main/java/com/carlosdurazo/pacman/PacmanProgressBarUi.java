@@ -1,11 +1,9 @@
 package com.carlosdurazo.pacman;
 
-import com.intellij.openapi.ui.GraphicsConfig;
 import com.intellij.openapi.util.ScalableIcon;
 import com.intellij.ui.Gray;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.scale.JBUIScale;
-import com.intellij.util.ui.GraphicsUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 
@@ -21,8 +19,9 @@ import java.awt.geom.RoundRectangle2D;
 
 public class PacmanProgressBarUi extends BasicProgressBarUI {
     private volatile int offset = 0;
-    private volatile int offset2 = 0;
-    private volatile int velocity = 1;
+    private volatile int objPosition = 0;
+    private volatile int direction = 1;
+    private static final float arcRoundCorner = JBUIScale.scale(15f);
 
     @SuppressWarnings({"MethodOverridesStaticMethodOfSuperclass", "UnusedDeclaration"})
     public static ComponentUI createUI(JComponent c) {
@@ -56,12 +55,12 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
     }
 
     @Override
-    protected void paintIndeterminate(Graphics g2d, JComponent c) {
+    protected void paintIndeterminate(Graphics g, JComponent c) {
 
-        if (!(g2d instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D)) {
             return;
         }
-        Graphics2D g = (Graphics2D) g2d;
+        Graphics2D graphics2D = (Graphics2D) g;
 
         Insets b = progressBar.getInsets(); // area for border
         int barRectWidth = progressBar.getWidth() - (b.right + b.left);
@@ -71,70 +70,55 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
             return;
         }
 
-        g.setColor(new JBColor(Gray._240.withAlpha(50), Color.BLACK));
-
         int w = c.getWidth();
         int h = c.getPreferredSize().height;
         if (!isEven(c.getHeight() - h)) h++;
 
-        Stroke stroke = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.CAP_ROUND, 0, new float[]{9}, 0);
-        g.setStroke(stroke);
+        // Creates the rectangle object used for the background color
+        final Area containingRoundRect = new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, arcRoundCorner, arcRoundCorner));
 
-        if (c.isOpaque()) {
-            g.fillRect(0, (c.getHeight() - h) / 2, w, h);
-        }
-
-        g.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
-        final GraphicsConfig config = GraphicsUtil.setupAAPainting(g);
-        g.translate(0, (c.getHeight() - h) / 2);
-
-        Paint old = g.getPaint();
-        g.setStroke(stroke);
-
-        final float R = JBUIScale.scale(8f);
-        final float R2 = JBUIScale.scale(9f);
-        final Area containingRoundRect = new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, R, R));
-        g.fill(containingRoundRect);
-        g.setPaint(old);
+        // Sets colors for background used on regular/dark themes
+        graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
+        graphics2D.fill(containingRoundRect);
 
         offset = (offset + 1) % getPeriodLength();
-        offset2 += velocity;
-        if (offset2 <= 5) {
-            offset2 = 5;
-            velocity = 1;
-        } else if (offset2 >= w - JBUI.scale(10)) {
-            offset2 = w - JBUI.scale(15);
-            velocity = -1;
+        objPosition += direction;
+
+        if (objPosition <= 8) { // Object is "touching" the left corner
+            objPosition = 8;
+            direction = 1; // Set to move right
+        } else if (objPosition >= w - JBUI.scale(10)) { // Object is "touching" the right corner
+            objPosition = w - JBUI.scale(15);
+            direction = -1; // Set to move left
         }
 
         Area area = new Area(new Rectangle2D.Float(0, 0, w, h));
-        area.subtract(new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, R, R)));
-        g.setPaint(Gray._128);
+        area.subtract(new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, arcRoundCorner, arcRoundCorner)));
+        graphics2D.setPaint(Gray._128);
         if (c.isOpaque()) {
-            g.fill(area);
+            graphics2D.fill(area);
         }
 
-        area.subtract(new Area(new RoundRectangle2D.Float(0, 0, w, h, R2, R2)));
+        area.subtract(new Area(new RoundRectangle2D.Float(0, 0, w, h, arcRoundCorner, arcRoundCorner)));
 
-        Container parent = c.getParent();
-        Color background = parent != null ? parent.getBackground() : UIUtil.getPanelBackground();
-        g.setPaint(background);
         if (c.isOpaque()) {
-            g.fill(area);
+            graphics2D.fill(area);
         }
 
-        Icon scaledIcon = velocity > 0 ? ((ScalableIcon) PacmanIcons.PAC_GIF_R) : ((ScalableIcon) PacmanIcons.PAC_GIF_L);
-        scaledIcon.paintIcon(progressBar, g, offset2 - JBUI.scale(10), 0);
+        Icon scaledIcon = direction > 0 ? // Is the object moving to the right?
+                ((ScalableIcon) PacmanIcons.PAC_GIF_R):
+                ((ScalableIcon) PacmanIcons.PAC_GIF_L);
+
+        scaledIcon.paintIcon(progressBar, graphics2D, objPosition - JBUI.scale(10), 0);
 
         // Deal with possible text painting
         if (progressBar.isStringPainted()) {
             if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
-                paintString(g, b.left, b.top, barRectWidth, barRectHeight, boxRect.x, boxRect.width);
+                paintString(graphics2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.x, boxRect.width);
             } else {
-                paintString(g, b.left, b.top, barRectWidth, barRectHeight, boxRect.y, boxRect.height);
+                paintString(graphics2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.y, boxRect.height);
             }
         }
-        config.restore();
     }
 
     @Override
@@ -150,19 +134,27 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
             return;
         }
 
-        final GraphicsConfig config = GraphicsUtil.setupAAPainting(g);
-
         Insets b = progressBar.getInsets(); // area for border
 
-        int barRectWidth = progressBar.getWidth();
-        int barRectHeight = progressBar.getPreferredSize().height;
-        if (!isEven(c.getHeight() - barRectHeight)) barRectHeight++;
+        int w = progressBar.getWidth();
+        int h = progressBar.getPreferredSize().height;
+        if (!isEven(c.getHeight() - h)) h++;
 
-        if (barRectWidth <= 0 || barRectHeight <= 0) {
+        final float R = JBUIScale.scale(15f);
+        final float R2 = JBUIScale.scale(9f);
+
+        if (w <= 0 || h <= 0) {
             return;
         }
 
-        int amountFull = getAmountFull(b, barRectWidth, barRectHeight);
+        // Creates the rectangle object used for the background color
+        final Area containingRoundRect = new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, R, R));
+
+        // Sets colors for background used on regular/dark themes
+        graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
+        graphics2D.fill(containingRoundRect);
+
+        int amountFull = getAmountFull(b, w, h);
         Container parent = c.getParent();
         Color background = parent != null ? parent.getBackground() : UIUtil.getPanelBackground();
 
@@ -173,10 +165,9 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         // Deal with possible text painting
         if (progressBar.isStringPainted()) {
             paintString(g, b.left, b.top,
-                    barRectWidth, barRectHeight,
+                    w, h,
                     amountFull, b);
         }
-        config.restore();
     }
 
     private void paintString(Graphics g, int x, int y, int w, int h, int fillStart, int amountFull) {
