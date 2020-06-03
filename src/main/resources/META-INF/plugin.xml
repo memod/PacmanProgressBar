@@ -2,7 +2,7 @@
     <id>com.carlosdurazo.pacman</id>
     <name>Pacman Progress Bar</name>
     <version>1.0</version>
-    <idea-version since-build="193"/>
+    <idea-version since-build="193.1822"/>
     <vendor email="guillermo.durazo@gmail.com">Carlos Durazo</vendor>
 
     <description><![CDATA[

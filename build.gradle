@@ -23,6 +23,6 @@ intellij {
 
 patchPluginXml {
     changeNotes """
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>"""
+      1.0 - First release!<br>
+      <em>Currently only have baseline for the progress bar.</em>"""
 }
