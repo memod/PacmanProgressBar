@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.carlosdurazo.pacman</id>
     <name>Pacman Progress Bar</name>
-    <version>1.0</version>
+    <version>1.0.1</version>
     <idea-version since-build="193.1822"/>
     <vendor email="guillermo.durazo@gmail.com">Carlos Durazo</vendor>
 
@@ -10,6 +10,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      <em>1.0.1 Adding more assets to make it more interesting.</em><br>
       <em>1.0 First release! Currently only have baseline for the progress bar.</em><br>
     ]]>
     </change-notes>
