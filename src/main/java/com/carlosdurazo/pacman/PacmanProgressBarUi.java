@@ -18,10 +18,11 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 
 public class PacmanProgressBarUi extends BasicProgressBarUI {
-    private volatile int offset = 0;
-    private volatile int objPosition = 0;
-    private volatile int direction = 1;
     private static final float arcRoundCorner = JBUIScale.scale(15f);
+    private volatile int offset = 0;
+    private volatile int pacmanPosition = 0;
+    private volatile int ghostPosition = 0;
+    private volatile int direction = 1;
 
     @SuppressWarnings({"MethodOverridesStaticMethodOfSuperclass", "UnusedDeclaration"})
     public static ComponentUI createUI(JComponent c) {
@@ -82,13 +83,13 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         graphics2D.fill(containingRoundRect);
 
         offset = (offset + 1) % getPeriodLength();
-        objPosition += direction;
+        pacmanPosition += direction;
 
-        if (objPosition <= 8) { // Object is "touching" the left corner
-            objPosition = 8;
+        if (pacmanPosition <= 8) { // Object is "touching" the left corner
+            pacmanPosition = 8;
             direction = 1; // Set to move right
-        } else if (objPosition >= w - JBUI.scale(10)) { // Object is "touching" the right corner
-            objPosition = w - JBUI.scale(15);
+        } else if (pacmanPosition >= w - JBUI.scale(10)) { // Object is "touching" the right corner
+            pacmanPosition = w - JBUI.scale(15);
             direction = -1; // Set to move left
         }
 
@@ -105,11 +106,27 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
             graphics2D.fill(area);
         }
 
+        // Assets behavior based on Pacman's direction
+        if (direction > 0) { // If pacman is walking to the right
+            // Draw cherry
+            PacmanIcons.CHERRY_PNG.paintIcon(progressBar, graphics2D, w - 25, 0);
+
+            // Makes sure that ghost appear when Pacman is half way thru the progress bar
+            if (pacmanPosition >= w / 2) {
+                ghostPosition = ghostPosition < 0 ? direction : ghostPosition + direction;
+                PacmanIcons.GHOST_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
+            }
+        } else { // If pacman is walking back
+            ghostPosition += (direction - JBUIScale.scale(0.2f)); // at this point, ghost will run from pacman
+            PacmanIcons.GHOST_VULNERABLE_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
+        }
+
+
         Icon scaledIcon = direction > 0 ? // Is the object moving to the right?
-                ((ScalableIcon) PacmanIcons.PAC_GIF_R):
+                ((ScalableIcon) PacmanIcons.PAC_GIF_R) :
                 ((ScalableIcon) PacmanIcons.PAC_GIF_L);
 
-        scaledIcon.paintIcon(progressBar, graphics2D, objPosition - JBUI.scale(10), 0);
+        scaledIcon.paintIcon(progressBar, graphics2D, pacmanPosition - JBUI.scale(10), 0);
 
         // Deal with possible text painting
         if (progressBar.isStringPainted()) {
