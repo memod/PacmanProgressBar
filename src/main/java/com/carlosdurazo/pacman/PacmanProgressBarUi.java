@@ -1,11 +1,8 @@
 package com.carlosdurazo.pacman;
 
-import com.intellij.openapi.util.ScalableIcon;
 import com.intellij.ui.Gray;
 import com.intellij.ui.JBColor;
-import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
@@ -15,17 +12,17 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.RoundRectangle2D;
 
 public class PacmanProgressBarUi extends BasicProgressBarUI {
-    private volatile int offset = 0;
-    private volatile int objPosition = 0;
+    private static final int INITIAL_GHOST_POS = -5;
+    private static final float RUNNING_PACE = 0.2f;
+    private static final Color DOT_COLOR = Color.WHITE;
+    private volatile int pacmanPosition = 0;
+    private volatile int ghostPosition = INITIAL_GHOST_POS;
     private volatile int direction = 1;
-    private static final float arcRoundCorner = JBUIScale.scale(15f);
 
     @SuppressWarnings({"MethodOverridesStaticMethodOfSuperclass", "UnusedDeclaration"})
     public static ComponentUI createUI(JComponent c) {
-        c.setBorder(JBUI.Borders.empty().asUIResource());
         return new PacmanProgressBarUi();
     }
 
@@ -62,63 +59,57 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         }
         Graphics2D graphics2D = (Graphics2D) g;
 
-        Insets b = progressBar.getInsets(); // area for border
-        int barRectWidth = progressBar.getWidth() - (b.right + b.left);
-        int barRectHeight = progressBar.getHeight() - (b.top + b.bottom);
+        int width = progressBar.getWidth();
+        int height = progressBar.getHeight();
 
-        if (barRectWidth <= 0 || barRectHeight <= 0) {
+        if (width <= 0 || height <= 0) {
             return;
         }
 
-        int w = c.getWidth();
-        int h = c.getPreferredSize().height;
-        if (!isEven(c.getHeight() - h)) h++;
+        if (!isEven(c.getHeight() - height)) height++;
 
         // Creates the rectangle object used for the background color
-        final Area containingRoundRect = new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, arcRoundCorner, arcRoundCorner));
+        final Area containingRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
 
         // Sets colors for background used on regular/dark themes
         graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
-        graphics2D.fill(containingRoundRect);
+        graphics2D.fill(containingRect);
 
-        offset = (offset + 1) % getPeriodLength();
-        objPosition += direction;
+        pacmanPosition += direction;
 
-        if (objPosition <= 8) { // Object is "touching" the left corner
-            objPosition = 8;
+        if (pacmanPosition <= 8) { // Object is "touching" the left corner
+            pacmanPosition = 8;
             direction = 1; // Set to move right
-        } else if (objPosition >= w - JBUI.scale(10)) { // Object is "touching" the right corner
-            objPosition = w - JBUI.scale(15);
+        } else if (pacmanPosition >= width - JBUI.scale(10)) { // Object is "touching" the right corner
+            pacmanPosition = width - JBUI.scale(15);
             direction = -1; // Set to move left
         }
 
-        Area area = new Area(new Rectangle2D.Float(0, 0, w, h));
-        area.subtract(new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, arcRoundCorner, arcRoundCorner)));
-        graphics2D.setPaint(Gray._128);
-        if (c.isOpaque()) {
-            graphics2D.fill(area);
-        }
+        // Assets behavior based on Pacman's direction
+        if (direction > 0) { // If pacman is walking to the right
 
-        area.subtract(new Area(new RoundRectangle2D.Float(0, 0, w, h, arcRoundCorner, arcRoundCorner)));
+            graphics2D.setColor(DOT_COLOR);
+            drawDottedLine(graphics2D, width, height, pacmanPosition);
 
-        if (c.isOpaque()) {
-            graphics2D.fill(area);
-        }
+            // Draw cherry
+            PacmanIcons.CHERRY_PNG.paintIcon(progressBar, graphics2D, width - 25, 0);
 
-        Icon scaledIcon = direction > 0 ? // Is the object moving to the right?
-                ((ScalableIcon) PacmanIcons.PAC_GIF_R):
-                ((ScalableIcon) PacmanIcons.PAC_GIF_L);
-
-        scaledIcon.paintIcon(progressBar, graphics2D, objPosition - JBUI.scale(10), 0);
-
-        // Deal with possible text painting
-        if (progressBar.isStringPainted()) {
-            if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
-                paintString(graphics2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.x, boxRect.width);
-            } else {
-                paintString(graphics2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.y, boxRect.height);
+            // Makes sure that ghost appear when Pacman is half way thru the progress bar
+            if (pacmanPosition >= width / 2) {
+                ghostPosition = ghostPosition < INITIAL_GHOST_POS ? INITIAL_GHOST_POS + direction :
+                        ghostPosition + direction;
+                PacmanIcons.GHOST_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
             }
+
+
+            PacmanIcons.PAC_GIF_R.paintIcon(progressBar, graphics2D, pacmanPosition - JBUI.scale(10), 0);
+        } else { // If pacman is walking back
+            ghostPosition += (direction - RUNNING_PACE); // at this point, ghost will run from pacman
+            PacmanIcons.GHOST_VULNERABLE_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
+            PacmanIcons.PAC_GIF_L.paintIcon(progressBar, graphics2D,
+                    pacmanPosition - (JBUI.scale(10)), 0);
         }
+
     }
 
     @Override
@@ -136,61 +127,37 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
 
         Insets b = progressBar.getInsets(); // area for border
 
-        int w = progressBar.getWidth();
-        int h = progressBar.getPreferredSize().height;
-        if (!isEven(c.getHeight() - h)) h++;
+        int width = progressBar.getWidth();
+        int height = progressBar.getPreferredSize().height;
+        if (!isEven(c.getHeight() - height)) height++;
 
-        final float R = JBUIScale.scale(15f);
-        final float R2 = JBUIScale.scale(9f);
-
-        if (w <= 0 || h <= 0) {
+        if (width <= 0 || height <= 0) {
             return;
         }
 
         // Creates the rectangle object used for the background color
-        final Area containingRoundRect = new Area(new RoundRectangle2D.Float(1f, 1f, w - 2f, h - 2f, R, R));
+        final Area containingRoundRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
 
         // Sets colors for background used on regular/dark themes
         graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
         graphics2D.fill(containingRoundRect);
 
-        int amountFull = getAmountFull(b, w, h);
-        Container parent = c.getParent();
-        Color background = parent != null ? parent.getBackground() : UIUtil.getPanelBackground();
+        int amountFull = getAmountFull(b, width, height);
 
-        g.setColor(background);
+        // Draw dotted line
+        graphics2D.setColor(DOT_COLOR);
+        drawDottedLine(graphics2D, width, height, amountFull);
 
+        // Draw Pacman
         PacmanIcons.PAC_GIF_R.paintIcon(progressBar, graphics2D, amountFull - (JBUI.scale(9) * 2), 0);
+    }
 
-        // Deal with possible text painting
-        if (progressBar.isStringPainted()) {
-            paintString(g, b.left, b.top,
-                    w, h,
-                    amountFull, b);
+    private void drawDottedLine(Graphics2D graphics2D, int width, int height, int amountFull) {
+        for (int pos = width; pos > amountFull; pos = pos - 20) {
+            graphics2D.fillRoundRect(pos, height / 4,
+                    8, 8,
+                    13, 13);
         }
     }
 
-    private void paintString(Graphics g, int x, int y, int w, int h, int fillStart, int amountFull) {
-        if (!(g instanceof Graphics2D)) {
-            return;
-        }
-
-        Graphics2D g2 = (Graphics2D) g;
-        String progressString = progressBar.getString();
-        g2.setFont(progressBar.getFont());
-        Point renderLocation = getStringPlacement(g2, progressString,
-                x, y, w, h);
-        Rectangle oldClip = g2.getClipBounds();
-
-        g2.setClip(oldClip);
-    }
-
-    @Override
-    protected int getBoxLength(int availableLength, int otherDimension) {
-        return availableLength;
-    }
-
-    private int getPeriodLength() {
-        return JBUI.scale(16);
-    }
 }
