@@ -1,0 +1,2 @@
+- name: IntelliJ Platform Plugin Verifier
+  uses: ChrisCarini/intellij-platform-plugin-verifier-action@v0.0.2
