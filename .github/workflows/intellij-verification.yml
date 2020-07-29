@@ -29,6 +29,7 @@ jobs:
             pycharmPC:2019.3
             clion:2019.3
             ideaIC:LATEST-EAP-SNAPSHOT
+            ideaIU:LATEST-EAP-SNAPSHOT
 
       - name: Get log file path and print contents
         run: |
