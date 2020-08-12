@@ -4,7 +4,6 @@
     <version>1.0.2</version>
     <idea-version since-build="193.5233.102"/>
     <vendor email="guillermo.durazo@gmail.com">Carlos G. Durazo</vendor>
-
     <description><![CDATA[
       Progress bar with a hungry Pacman feeding off your bugs!
     ]]></description>
