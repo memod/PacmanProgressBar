@@ -3,29 +3,23 @@ plugins {
     id "org.jetbrains.intellij" version "0.4.21"
 }
 
-group 'org.carlosdurazo.pacman'
-version '1.0.1'
+group 'com.carlosdurazo.pacman'
+version '1.0.2'
 
 sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
     mavenCentral()
     jcenter()
 }
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}
-
 intellij {
-    version '2020.1'
+    version '2020.2'
 }
 
 patchPluginXml {
     changeNotes """
-    1.0.1 - Minor fixes<br>
-    <em>Updated asset used for Pacman animation.</em>
-    1.0 - First release!<br>
-    <em>Currently only have baseline for the progress bar.</em>
+    <b>1.0.2</b> - Compatibility with 2020.2
     """
 }
