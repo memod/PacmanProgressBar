@@ -87,7 +87,6 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
 
         // Assets behavior based on Pacman's direction
         if (direction > 0) { // If pacman is walking to the right
-
             graphics2D.setColor(DOT_COLOR);
             drawDottedLine(graphics2D, width, height, pacmanPosition);
 
@@ -109,7 +108,6 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
             PacmanIcons.PAC_GIF_L.paintIcon(progressBar, graphics2D,
                     pacmanPosition - (JBUI.scale(10)), 0);
         }
-
     }
 
     @Override
@@ -117,6 +115,7 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         if (!(g instanceof Graphics2D)) {
             return;
         }
+
         Graphics2D graphics2D = (Graphics2D) g;
 
         if (progressBar.getOrientation() != SwingConstants.HORIZONTAL ||

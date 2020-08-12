@@ -9,7 +9,7 @@ import javax.swing.*;
 public class PacmanProgressBarComponent {
     public PacmanProgressBarComponent() {
         MessageBusConnection messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-        messageBusConnection.subscribe(LafManagerListener.TOPIC, __ ->updateProgressBarUi());
+        messageBusConnection.subscribe(LafManagerListener.TOPIC, __ -> updateProgressBarUi());
 
         updateProgressBarUi();
     }
