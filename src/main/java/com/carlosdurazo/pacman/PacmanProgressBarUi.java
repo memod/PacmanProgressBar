@@ -10,6 +10,7 @@ import javax.swing.plaf.basic.BasicProgressBarUI;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 
@@ -20,6 +21,10 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
     private volatile int pacmanPosition = 0;
     private volatile int ghostPosition = INITIAL_GHOST_POS;
     private volatile int direction = 1;
+    private volatile Graphics2D graphics2D;
+    private Area containingRect;
+    private int width;
+    private int height;
 
     @SuppressWarnings({"MethodOverridesStaticMethodOfSuperclass", "UnusedDeclaration"})
     public static ComponentUI createUI(JComponent c) {
@@ -53,14 +58,18 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
 
     @Override
     protected void paintIndeterminate(Graphics g, JComponent c) {
-
         if (!(g instanceof Graphics2D)) {
             return;
         }
-        Graphics2D graphics2D = (Graphics2D) g;
+        if (progressBar.getOrientation() != SwingConstants.HORIZONTAL) {
+            super.paintDeterminate(g, c);
+            return;
+        }
 
-        int width = progressBar.getWidth();
-        int height = progressBar.getHeight();
+        graphics2D = (Graphics2D) g;
+
+        width = progressBar.getWidth();
+        height = progressBar.getHeight();
 
         if (width <= 0 || height <= 0) {
             return;
@@ -69,7 +78,7 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         if (!isEven(c.getHeight() - height)) height++;
 
         // Creates the rectangle object used for the background color
-        final Area containingRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
+        containingRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
 
         // Sets colors for background used on regular/dark themes
         graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
@@ -87,7 +96,6 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
 
         // Assets behavior based on Pacman's direction
         if (direction > 0) { // If pacman is walking to the right
-
             graphics2D.setColor(DOT_COLOR);
             drawDottedLine(graphics2D, width, height, pacmanPosition);
 
@@ -100,16 +108,20 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
                         ghostPosition + direction;
                 PacmanIcons.GHOST_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
             }
-
-
-            PacmanIcons.PAC_GIF_R.paintIcon(progressBar, graphics2D, pacmanPosition - JBUI.scale(10), 0);
+            PacmanIcons.PAC_GIF_R.paintIcon(this.progressBar, g, pacmanPosition - JBUI.scale(10), 0);
         } else { // If pacman is walking back
             ghostPosition += (direction - RUNNING_PACE); // at this point, ghost will run from pacman
             PacmanIcons.GHOST_VULNERABLE_PNG.paintIcon(progressBar, graphics2D, ghostPosition, 0);
-            PacmanIcons.PAC_GIF_L.paintIcon(progressBar, graphics2D,
+            PacmanIcons.PAC_GIF_L.paintIcon(this.progressBar, g,
                     pacmanPosition - (JBUI.scale(10)), 0);
         }
+        System.out.println(isMacRetinaDisplay());
 
+    }
+    public static boolean isMacRetinaDisplay() {
+        final GraphicsConfiguration gfxConfig = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        final AffineTransform transform = gfxConfig.getDefaultTransform();
+        return !transform.isIdentity();
     }
 
     @Override
@@ -117,30 +129,27 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
         if (!(g instanceof Graphics2D)) {
             return;
         }
-        Graphics2D graphics2D = (Graphics2D) g;
-
+        graphics2D = (Graphics2D) g;
         if (progressBar.getOrientation() != SwingConstants.HORIZONTAL ||
                 !c.getComponentOrientation().isLeftToRight()) {
             super.paintDeterminate(g, c);
             return;
         }
-
-        Insets b = progressBar.getInsets(); // area for border
-
-        int width = progressBar.getWidth();
-        int height = progressBar.getPreferredSize().height;
-        if (!isEven(c.getHeight() - height)) height++;
-
+        width = progressBar.getWidth();
+        height = progressBar.getHeight();
         if (width <= 0 || height <= 0) {
             return;
         }
 
+        if (!isEven(c.getHeight() - height)) height++;
+        Insets b = progressBar.getInsets(); // area for border
+
         // Creates the rectangle object used for the background color
-        final Area containingRoundRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
+        containingRect = new Area(new Rectangle2D.Float(1f, 1f, width - 2f, height - 2f));
 
         // Sets colors for background used on regular/dark themes
         graphics2D.setColor(new JBColor(Gray._165.withAlpha(50), Gray._88.withAlpha(50)));
-        graphics2D.fill(containingRoundRect);
+        graphics2D.fill(containingRect);
 
         int amountFull = getAmountFull(b, width, height);
 
@@ -159,5 +168,4 @@ public class PacmanProgressBarUi extends BasicProgressBarUI {
                     13, 13);
         }
     }
-
 }
